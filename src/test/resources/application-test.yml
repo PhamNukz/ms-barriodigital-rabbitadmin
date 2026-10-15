@@ -1,0 +1,21 @@
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+
+barriodigital:
+  security:
+    issuer-uri: https://login.microsoftonline.com/test-tenant/v2.0
+    audiences:
+      - api://test-api
+    required-scope: access_as_user
+  rabbitadmin:
+    colas-conocidas:
+      - q.cmd.email
+
+management:
+  health:
+    rabbit:
+      # Sin broker en los tests. En produccion SI queda activo: un administrador de
+      # RabbitMQ que no alcanza el broker esta genuinamente DOWN y debe decirlo.
+      enabled: false
