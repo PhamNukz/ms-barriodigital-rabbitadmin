@@ -78,7 +78,8 @@ Los tests **no necesitan RabbitMQ**: `AmqpAdmin` se mockea. Cubren la validació
 mensajes, la seguridad (`401` sin token, `403` sin rol Admin, `200`/`201` con Admin) y el
 servicio contra un `AmqpAdmin` falso.
 
-Variables de entorno: `RABBITMQ_HOST`, `RABBITMQ_PORT`, `RABBITMQ_USER`,
+Variables de entorno: `RABBITMQ_ADDRESSES` (lista `host:puerto` de los dos nodos, para
+failover; si falta se usan `RABBITMQ_HOST` y `RABBITMQ_PORT`), `RABBITMQ_USER`,
 `RABBITMQ_PASSWORD`, más las de Entra (`AAD_ISSUER_URI`, `AAD_API_CLIENT_ID`,
 `AAD_REQUIRED_SCOPE`). En `ec2-apps` el broker se alcanza por IP privada; `sg-mq` ya
 permite 5672 desde `sg-apps`, así que no hay recurso AWS que crear.
