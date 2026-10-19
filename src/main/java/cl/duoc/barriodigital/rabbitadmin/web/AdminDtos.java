@@ -6,18 +6,21 @@ import jakarta.validation.constraints.Size;
 
 /**
  * Entrada de la API. Los nombres se validan contra lo que RabbitMQ acepta
- * —letras, digitos, guion, guion bajo, punto y dos puntos, hasta 255 caracteres—
- * para que un nombre invalido se rechace con un 400 legible en vez de llegar al
- * broker y volver como un error de protocolo.
+ * —letras, digitos, guion, guion bajo, punto y dos puntos, hasta 255 caracteres,
+ * y sin el prefijo {@code amq.}, que el broker reserva para si— para que un nombre
+ * invalido se rechace con un 400 legible en vez de llegar al broker y volver como
+ * un error de protocolo. Las mismas reglas se aplican a los nombres que llegan en
+ * la ruta ({@code /admin/queues/{nombre}}) y en {@code ?names=}.
  */
 public final class AdminDtos {
 
     private AdminDtos() {
     }
 
-    static final String NOMBRE_VALIDO = "^[A-Za-z0-9._:-]+$";
+    static final String NOMBRE_VALIDO = "^(?!amq\\.)[A-Za-z0-9._:-]+$";
     static final String MENSAJE_NOMBRE =
-            "solo admite letras, digitos, punto, guion, guion bajo y dos puntos (sin espacios)";
+            "solo admite letras, digitos, punto, guion, guion bajo y dos puntos (sin espacios),"
+            + " y no puede empezar con 'amq.' (prefijo reservado de RabbitMQ)";
 
     public record CrearColaRequest(
             @NotBlank(message = "el nombre de la cola es obligatorio")
@@ -54,10 +57,12 @@ public final class AdminDtos {
 
     public record BindingRequest(
             @NotBlank(message = "el nombre de la cola es obligatorio")
+            @Size(max = 255, message = "el nombre de la cola no puede superar los 255 caracteres")
             @Pattern(regexp = NOMBRE_VALIDO, message = "el nombre de la cola " + MENSAJE_NOMBRE)
             String cola,
 
             @NotBlank(message = "el nombre del exchange es obligatorio")
+            @Size(max = 255, message = "el nombre del exchange no puede superar los 255 caracteres")
             @Pattern(regexp = NOMBRE_VALIDO, message = "el nombre del exchange " + MENSAJE_NOMBRE)
             String exchange,
 

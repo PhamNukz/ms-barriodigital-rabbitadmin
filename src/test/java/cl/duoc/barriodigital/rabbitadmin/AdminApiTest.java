@@ -126,6 +126,61 @@ class AdminApiTest {
                    org.hamcrest.Matchers.containsString("routing key es obligatoria")));
     }
 
+    @Test
+    void nombre_con_prefijo_reservado_amq_es_400() throws Exception {
+        mvc.perform(post("/admin/queues")
+                .contentType("application/json")
+                .content("{\"nombre\":\"amq.mia\"}")
+                .with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("amq.")));
+    }
+
+    @Test
+    void nombre_invalido_en_la_ruta_es_400_con_mensaje() throws Exception {
+        mvc.perform(delete("/admin/queues/cola!invalida").with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.title").value("Entrada invalida"))
+           .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("sin espacios")));
+    }
+
+    @Test
+    void purgar_cola_reservada_es_400() throws Exception {
+        mvc.perform(post("/admin/queues/amq.rabbitmq.trace/purge").with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void nombre_invalido_en_names_es_400() throws Exception {
+        mvc.perform(get("/admin/queues").param("names", "q.cmd.email", "mal nombre")
+                .with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("names")));
+    }
+
+    @Test
+    void eliminar_exchange_con_nombre_invalido_es_400() throws Exception {
+        mvc.perform(delete("/admin/exchanges/amq.direct").with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isBadRequest())
+           .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("exchange")));
+    }
+
+    /** Redeclarar con otros argumentos (p. ej. q.cmd.email como clasica) es configuracion invalida: 409 legible. */
+    @Test
+    void redeclarar_cola_con_otros_argumentos_es_409_con_el_motivo_del_broker() throws Exception {
+        when(amqpAdmin.declareQueue(any(Queue.class))).thenThrow(new org.springframework.amqp.AmqpIOException(
+                new java.io.IOException(new RuntimeException(
+                        "reply-code=406, reply-text=PRECONDITION_FAILED - inequivalent arg 'x-queue-type'"
+                                + " for queue 'q.cmd.email'"))));
+
+        mvc.perform(post("/admin/queues")
+                .contentType("application/json")
+                .content("{\"nombre\":\"q.cmd.email\"}")
+                .with(jwt().authorities(rol("Admin"))))
+           .andExpect(status().isConflict())
+           .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("x-queue-type")));
+    }
+
     // ---------- not found ----------
 
     @Test
