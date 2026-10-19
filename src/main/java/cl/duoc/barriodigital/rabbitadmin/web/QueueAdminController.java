@@ -6,12 +6,23 @@ import cl.duoc.barriodigital.rabbitadmin.web.AdminDtos.ColaCreadaResponse;
 import cl.duoc.barriodigital.rabbitadmin.web.AdminDtos.CrearColaRequest;
 import cl.duoc.barriodigital.rabbitadmin.web.AdminDtos.PurgaResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/** Acceso restringido a Admin en SecurityConfig, para todo /admin/**. */
+import static cl.duoc.barriodigital.rabbitadmin.web.AdminDtos.MENSAJE_NOMBRE;
+import static cl.duoc.barriodigital.rabbitadmin.web.AdminDtos.NOMBRE_VALIDO;
+
+/**
+ * Acceso restringido a Admin en SecurityConfig, para todo /admin/**.
+ * {@code @Validated} hace que tambien se validen los nombres de la ruta y de
+ * {@code ?names=}, no solo los del cuerpo.
+ */
+@Validated
 @RestController
 @RequestMapping("/admin/queues")
 public class QueueAdminController {
@@ -31,7 +42,10 @@ public class QueueAdminController {
 
     @DeleteMapping("/{nombre}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void eliminar(@PathVariable String nombre) {
+    public void eliminar(@PathVariable
+                         @Size(max = 255, message = "el nombre no puede superar los 255 caracteres")
+                         @Pattern(regexp = NOMBRE_VALIDO, message = "el nombre de la cola " + MENSAJE_NOMBRE)
+                         String nombre) {
         service.eliminarCola(nombre);
     }
 
@@ -40,12 +54,17 @@ public class QueueAdminController {
      *              configuracion: AMQP no permite enumerar colas.
      */
     @GetMapping
-    public List<InfoCola> listar(@RequestParam(required = false) List<String> names) {
+    public List<InfoCola> listar(@RequestParam(required = false)
+                                 List<@Pattern(regexp = NOMBRE_VALIDO,
+                                         message = "cada nombre en 'names' " + MENSAJE_NOMBRE) String> names) {
         return service.listar(names);
     }
 
     @PostMapping("/{nombre}/purge")
-    public PurgaResponse purgar(@PathVariable String nombre) {
+    public PurgaResponse purgar(@PathVariable
+                                @Size(max = 255, message = "el nombre no puede superar los 255 caracteres")
+                                @Pattern(regexp = NOMBRE_VALIDO, message = "el nombre de la cola " + MENSAJE_NOMBRE)
+                                String nombre) {
         return new PurgaResponse(nombre, service.purgarCola(nombre));
     }
 }

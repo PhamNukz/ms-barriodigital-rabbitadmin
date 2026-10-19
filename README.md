@@ -14,7 +14,7 @@ worker del **plano de datos** y esto es **plano de control**. `notify` hoy no ex
 en absoluto; darle endpoints que crean y borran colas convertiría al único componente sin
 superficie de red en el más peligroso del sistema. El detalle completo, con sus
 contraindicaciones y el costo que se acepta, está en
-[Justificacion-Mensajeria.md §3](../barriodigital-docs/Justificacion-Mensajeria.md).
+[Justificacion-Mensajeria.md §3](https://github.com/PhamNukz/barriodigital-docs/blob/main/Justificacion-Mensajeria.md).
 
 ## La regla: la topología base es código, lo operativo es API
 
@@ -64,9 +64,19 @@ POST /admin/queues  {"nombre": "cola con espacios"}
                 guion, guion bajo y dos puntos (sin espacios)"}
 ```
 
-`404` cuando la cola o el exchange no existen, y `502` cuando el broker rechaza la
-operación —por ejemplo `PRECONDITION_FAILED` al redeclarar algo que ya existe con otros
-argumentos—, porque ese fallo es del sistema de abajo y no de este servicio.
+| Código | Cuándo |
+|---|---|
+| `400` | Nombre vacío, con caracteres inválidos, de más de 255 caracteres o con el prefijo reservado `amq.`; tipo de exchange desconocido; binding sin routing key. Vale para el cuerpo **y** para los nombres que llegan en la ruta (`/admin/queues/{nombre}`) y en `?names=` |
+| `404` | La cola o el exchange no existen |
+| `409` | Configuración incompatible: redeclarar algo que ya existe con otros argumentos (p. ej. `q.cmd.email`, que es quorum, como clásica). El `detail` trae el motivo exacto del broker (`PRECONDITION_FAILED - inequivalent arg 'x-queue-type'…`) |
+| `502` | El broker falló por otra causa (caído, sin conexión): el error es del sistema de abajo |
+
+Las validaciones viven en `web/AdminDtos.java` (cuerpo) y como anotaciones en los parámetros de los controladores
+(`@Validated`); los mensajes, en `web/ApiExceptionHandler.java`.
+
+**Sobre "actualizar":** en AMQP una cola o un exchange **no se modifican** una vez declarados: redeclararlos con
+otros argumentos es justo el `409`. Las operaciones de actualización que existen son las que ofrece esta API:
+purgar el contenido de una cola y agregar o quitar bindings. Cambiar argumentos exige borrar y volver a crear.
 
 ## Correr y probar
 
@@ -92,8 +102,3 @@ presente al escribir el healthcheck del contenedor en **D8**: si se usa `/actuat
 este servicio quedará `unhealthy` cada vez que `ec2-mq` esté caído, que es justo cuando más
 se lo quiere a mano para diagnosticar. Si eso molesta, el healthcheck del compose puede
 apuntar a `/actuator/health/liveness` en vez de al agregado.
-
-## Pendiente
-
-`Dockerfile`, `ci.yml`, `build-image.yml` y la entrada en `apps/compose.yml` con
-`-Xmx192m` son los ítems **D7–D10** del backlog, de la ola siguiente.
