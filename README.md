@@ -4,7 +4,7 @@ Microservicio **administrador de RabbitMQ** (Caso §5). Spring Boot 3.3.5 / Java
 puerto **8086**, **sin base de datos**: es plano de control y es stateless.
 
 Matriz de funcionalidades del proyecto:
-[barriodigital-docs/Cumplimiento-Prueba2.md](../barriodigital-docs/Cumplimiento-Prueba2.md).
+[barriodigital-docs/Cumplimiento-Prueba2.md](https://github.com/PhamNukz/barriodigital-docs/blob/main/Cumplimiento-Prueba2.md).
 
 ## Por qué es un repo aparte
 
